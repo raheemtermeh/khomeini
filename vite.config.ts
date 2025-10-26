@@ -84,16 +84,28 @@ export default defineConfig({
     }),
 
   ],
+<<<<<<< HEAD
   // تنظیم base برای استفاده از مسیرهای نسبی در محیط‌های غیر از ریشه دامنه
   base: "./", 
+=======
+  base: "./",
+>>>>>>> 0248b6354e7d83647dbbae1804b82085eb93dfd4
   server: {
     allowedHosts: [
       'fz-front.linooxel.com',  // ✅ add your domain here
       'localhost',
       '127.0.0.1',
     ],
+<<<<<<< HEAD
     // تنظیم host: true برای دسترسی از شبکه محلی
     host: true, 
     port: 5173, 
   }
 });
+=======
+    // می‌توانید تنظیمات اضافی سرور هم اضافه کنید
+    host: true, // listen on all addresses
+    port: 5173, // پورت پیشفرض Vite
+  }
+});
+>>>>>>> 0248b6354e7d83647dbbae1804b82085eb93dfd4
