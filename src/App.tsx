@@ -1,3 +1,5 @@
+// src/App.tsx
+
 import { Suspense, lazy, useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { useAppSelector } from "./app/hooks";
@@ -20,7 +22,8 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 const FaqPage = lazy(() => import("./pages/FaqPage"));
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // ✨ تغییر 1: مقداردهی اولیه `isLoggedIn` بر اساس وجود Access Token
+  const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("accessToken"));
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { mode } = useAppSelector((state) => state.theme);
 
@@ -38,11 +41,15 @@ function App() {
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
+    // ✨ تغییر 2: اگر در رفرش اولیه، Access Token وجود داشت و معتبر بود،
+    // می‌توانستید در اینجا یک تماس API برای اعتبارسنجی توکن بگذارید.
+    // اما برای سادگی، فعلاً فقط بر اساس وجود آن عمل می‌کنیم.
+
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, []);
+  }, []); // این useEffect فقط یک بار هنگام Mount شدن اجرا می‌شود
 
   // جلوگیری از رندر در حالت آفلاین
   if (!isOnline) {
@@ -61,7 +68,13 @@ function App() {
   }, [mode]);
 
   const handleLoginSuccess = () => setIsLoggedIn(true);
-  const handleLogout = () => setIsLoggedIn(false);
+
+  const handleLogout = () => {
+    // ✨ تغییر 3: حذف توکن‌ها هنگام خروج دستی
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    setIsLoggedIn(false);
+  };
 
   return (
     <>
