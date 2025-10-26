@@ -231,8 +231,8 @@ const ProfilePage = () => {
           >
             <InfoField label="نام و نام خانوادگی" name="full_name" value={profile.full_name} status={profile.full_name ? "verified" : "unverified"} onChange={handleChange} />
             <InfoField label="کد ملی" name="national_code" value={profile.national_code} status={profile.national_code ? "verified" : "unverified"} onChange={handleChange} />
-            <InfoField label="نام" name="first_name" value={profile.first_name} status={profile.first_name ? "verified" : "unverified"} onChange={handleChange} />
-            <InfoField label="نام خانوادگی" name="last_name" value={profile.last_name} status={profile.last_name ? "verified" : "unverified"} onChange={handleChange} />
+            <InfoField label="نام کاربری" name="first_name" value={profile.first_name} status={profile.first_name ? "verified" : "unverified"} onChange={handleChange} editable={false}/>
+            <InfoField label=" نام خانوادگی لاتین" name="last_name" value={profile.last_name} status={profile.last_name ? "verified" : "unverified"} onChange={handleChange} />
             <InfoField label="ایمیل" name="email" value={profile.email} status={profile.email ? "verified" : "unverified"} onChange={handleChange} />
             <InfoField label="شماره موبایل" name="mobile" value={profile.mobile} status={profile.mobile ? "verified" : "unverified"} onChange={handleChange} editable={false} />
 
@@ -252,7 +252,7 @@ const ProfilePage = () => {
             </div>
 
             <InfoField label="شماره شبا" name="sheba" value={profile.sheba} status={profile.sheba ? "verified" : "unverified"} onChange={handleChange} />
-            <InfoField label="لینک" name="link" value={profile.link} status={profile.link ? "verified" : "unverified"} onChange={handleChange} />
+            <InfoField label="لینک سایت یا پیج اینستاگرام شما!" name="link" value={profile.link} status={profile.link ? "verified" : "unverified"} onChange={handleChange} />
 
             {/* 📍 موقعیت مکانی */}
             <div className="w-full md:col-span-2 pt-4 border-t border-gray-200 dark:border-gray-700">
@@ -319,3 +319,4 @@ const ProfilePage = () => {
 };
 
 export default ProfilePage;
+
