@@ -50,13 +50,10 @@ const RichTextEditor = () => {
 const ReportIssuePage = () => {
   return (
     <div className="p-4 sm:p-6 md:p-8">
-<<<<<<< HEAD
       <span className="text-lg font-bold  text-red-500">گزارش مشکل</span>
      
-=======
     <span className="text-lg font-bold  text-red-500">گزارش مشکل</span>
 
->>>>>>> 0248b6354e7d83647dbbae1804b82085eb93dfd4
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg w-full mx-auto border-t-4 border-blue-500 p-6">
         <form>
           <InputField
