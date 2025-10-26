@@ -1,19 +1,13 @@
-import { useRegisterSW } from "virtual:pwa-register/react";
+import { useState } from "react";
 import { IoReload } from "react-icons/io5";
 
 function PwaReloadPrompt() {
-  const {
-    offlineReady: [offlineReady, setOfflineReady],
-    needRefresh: [needRefresh, setNeedRefresh],
-    updateServiceWorker,
-  } = useRegisterSW({
-    onRegistered(r: ServiceWorkerRegistration | undefined) {
-      console.log("SW Registered: ", r);
-    },
-    onRegisterError(error: unknown) {
-      console.log("SW registration error", error);
-    },
-  });
+  // جایگزین useRegisterSW با useState معمولی
+  const [offlineReady, setOfflineReady] = useState(false);
+  const [needRefresh, setNeedRefresh] = useState(false);
+
+  // هیچ SW ای ثبت یا آپدیت نمی‌شه
+  const updateServiceWorker = (_: boolean) => {};
 
   const close = () => {
     setOfflineReady(false);
