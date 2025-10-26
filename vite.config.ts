@@ -56,5 +56,15 @@ export default defineConfig({
     }),
     
   ],
-  base: "./"
+  base: "./",
+  server: {
+    allowedHosts: [
+      'fz-front.linooxel.com',  // ✅ add your domain here
+      'localhost',
+      '127.0.0.1',
+    ],
+    // می‌توانید تنظیمات اضافی سرور هم اضافه کنید
+    host: true, // listen on all addresses
+    port: 5173, // پورت پیشفرض Vite
+  }
 });
