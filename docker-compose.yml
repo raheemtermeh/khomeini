@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  fun_zone_dev:
+    build: .
+    container_name: fun_zone_dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    restart: unless-stopped
