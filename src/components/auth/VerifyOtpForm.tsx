@@ -13,6 +13,18 @@ interface Props {
 const OTP_LENGTH = 5;
 const RESEND_TIMEOUT = 120;
 
+// ✅ تابع کمکی: تبدیل اعداد فارسی به انگلیسی
+const toEnglishDigits = (str: string): string => {
+  const persianNumbers = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+  const englishDigits = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+  let newStr = str;
+  for (let i = 0; i < 10; i++) {
+    newStr = newStr.replace(persianNumbers[i], englishDigits[i]);
+  }
+  return newStr;
+};
+
 const VerifyOtpForm = ({ phoneNumber, token, onSubmit, onEditPhone }: Props) => {
   const [otp, setOtp] = useState<string[]>(new Array(OTP_LENGTH).fill(""));
   const [timeLeft, setTimeLeft] = useState(RESEND_TIMEOUT);
@@ -29,19 +41,60 @@ const VerifyOtpForm = ({ phoneNumber, token, onSubmit, onEditPhone }: Props) => 
     return () => clearTimeout(timer);
   }, [timeLeft]);
 
+  // ✨ اصلاح شده: مدیریت ورودی و پرش به جلو
   const handleChange = (e: ChangeEvent<HTMLInputElement>, index: number) => {
-    const value = e.target.value;
+    const rawValue = e.target.value;
+    
+    // اگر ورودی پاک شد (چه با Backspace از طریق JS یا Delete)، فقط اجازه می‌دهیم خالی شود
+    if (rawValue === "") {
+        const newOtp = [...otp];
+        newOtp[index] = "";
+        setOtp(newOtp);
+        return; 
+    }
+    
+    // تبدیل ورودی (شامل فارسی) به انگلیسی و گرفتن فقط کاراکتر اول
+    const englishValue = toEnglishDigits(rawValue);
+    const value = englishValue.charAt(0);
+
     if (/^[0-9]$/.test(value)) {
       const newOtp = [...otp];
       newOtp[index] = value;
       setOtp(newOtp);
-      if (index < OTP_LENGTH - 1) inputRefs.current[index + 1]?.focus();
+      
+      // پرش خودکار به فیلد بعدی
+      if (index < OTP_LENGTH - 1) {
+        inputRefs.current[index + 1]?.focus();
+      }
     }
   };
 
+  // ✨ اصلاح شده: مدیریت Backspace و Delete برای پاک کردن و پرش به عقب
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>, index: number) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+    // اگر Backspace زده شد
+    if (e.key === "Backspace") {
+      // جلوگیری از عملکرد پیش‌فرض مرورگر
+      e.preventDefault(); 
+
+      const newOtp = [...otp];
+      
+      // اگر فیلد فعلی پر است، ابتدا آن را پاک کن
+      if (newOtp[index]) {
+        newOtp[index] = "";
+        setOtp(newOtp);
+      } 
+      // اگر فیلد فعلی خالی است و فیلد قبلی وجود دارد، به عقب بپر
+      else if (index > 0) {
+        newOtp[index - 1] = ""; // پاک کردن فیلد قبلی (اختیاری)
+        setOtp(newOtp);
+        inputRefs.current[index - 1]?.focus();
+      }
+    } 
+    // مدیریت کلید Delete برای پاک کردن فیلد فعلی
+    else if (e.key === "Delete") {
+      const newOtp = [...otp];
+      newOtp[index] = "";
+      setOtp(newOtp);
     }
   };
 
@@ -72,15 +125,21 @@ const VerifyOtpForm = ({ phoneNumber, token, onSubmit, onEditPhone }: Props) => 
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const otpValue = otp.join("");
-    if (otpValue.length !== OTP_LENGTH) return;
+    const rawOtpValue = otp.join("");
+    if (rawOtpValue.length !== OTP_LENGTH) {
+        alert("لطفاً کد تایید را کامل وارد کنید.");
+        return;
+    }
+
+    // اطمینان از ارسال کد تایید به فرمت انگلیسی
+    const otpValueToSend = toEnglishDigits(rawOtpValue);
 
     setIsSubmitting(true);
     try {
-      console.debug("[VerifyOtpForm] verifying OTP", { token, code: otpValue });
+      console.debug("[VerifyOtpForm] verifying OTP", { token, code: otpValueToSend });
       const { data } = await api.post("/user/check-sms-login-user", {
         token,
-        code: otpValue,
+        code: otpValueToSend, // ارسال کد انگلیسی
         action: "verify",
       });
 
@@ -138,7 +197,8 @@ const VerifyOtpForm = ({ phoneNumber, token, onSubmit, onEditPhone }: Props) => 
               key={index}
               ref={(el) => void (inputRefs.current[index] = el)}
               type="text"
-              maxLength={1}
+              // برای مدیریت کامل پاک کردن، maxLength باید در حالت onKeyDown مدیریت شود
+              maxLength={1} 
               value={digit}
               onChange={(e) => handleChange(e, index)}
               onKeyDown={(e) => handleKeyDown(e, index)}
