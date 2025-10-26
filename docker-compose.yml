@@ -1,13 +1,15 @@
-version: "3.8"
+version: "3.9"
 
 services:
   fun_zone_dev:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: fun_zone_dev
     ports:
-      - "5173:5173"
+      - "5173:5173" # وصل کردن پورت کانتینر به هاست
     volumes:
-      - .:/app
-      - /app/node_modules
-    command: npm run dev -- --host
-    restart: unless-stopped
+      - .:/app # برای hot reload کدها
+      - /app/node_modules # جلوگیری از overwrite شدن node_modules داخل کانتینر
+    environment:
+      - NODE_ENV=development

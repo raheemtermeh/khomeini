@@ -4,17 +4,17 @@ FROM node:latest
 # تنظیم مسیر کاری داخل کانتینر
 WORKDIR /app
 
-# کپی فایل‌های پکیج برای نصب
+# کپی فایل‌های package.json و package-lock.json
 COPY package*.json ./
 
-# نصب پکیج‌ها (npm ci سریع‌تره، ولی اگه lock فایل نداری از npm install استفاده کن)
-RUN npm install
+# نصب تمام dependencies و devDependencies
+RUN npm install --include=dev
 
-# کپی کل سورس پروژه
+# کپی کل پروژه
 COPY . .
 
-# باز کردن پورت (مثلاً 5173 برای Vite)
+# expose پورت dev (vite)
 EXPOSE 5173
 
-# اجرای پروژه در حالت dev
+# دستور پیش‌فرض برای dev
 CMD ["npm", "run", "dev", "--", "--host"]
