@@ -1,7 +1,12 @@
 // src/pages/ProfilePage.tsx
 
-import { IoPencil, IoCheckmarkCircle, IoCloseCircle } from "react-icons/io5";
-import { useEffect, useState } from "react";
+import {
+  IoPencil,
+  IoCheckmarkCircle,
+  IoCloseCircle,
+  IoWarning,
+} from "react-icons/io5"; // IoWarning اضافه شد
+import { useEffect, useState, useRef } from "react"; // useRef اضافه شد
 import LocationPicker from "../components/profileComponents/LocationPicker";
 import { getProfile, updateProfile } from "../services/profileService";
 import { FiSave, FiMapPin, FiCamera } from "react-icons/fi";
@@ -29,14 +34,29 @@ interface Profile {
   national_code?: string;
   sheba?: string;
   pk?: number;
-  // فرض می‌کنیم یک فیلد 'is_finalized' از سمت سرور می‌آید
   is_finalized?: boolean;
 }
+
+// تعریف یک نوع برای خطاها
+type ProfileErrors = {
+  [key in keyof Profile | "location" | "rules"]?: string;
+};
 
 // ✅ تابع کمکی: تبدیل اعداد فارسی به انگلیسی
 const toEnglishDigits = (str: string | undefined): string | undefined => {
   if (!str) return str;
-  const persianNumbers = [/۰/g, /۱/g, /۲/g, /۳/g, /۴/g, /۵/g, /۶/g, /۷/g, /۸/g, /۹/g];
+  const persianNumbers = [
+    /۰/g,
+    /۱/g,
+    /۲/g / g,
+    /۳/g,
+    /۴/g,
+    /۵/g,
+    /۶/g,
+    /۷/g,
+    /۸/g,
+    /۹/g,
+  ];
   for (let i = 0; i < 10; i++) {
     str = str.replace(persianNumbers[i], String(i));
   }
@@ -62,43 +82,70 @@ const InfoField = ({
   status,
   onChange,
   editable = true,
+  error, // پروپ جدید
+  inputRef, // پروپ جدید
 }: {
   label: string;
-  name: string;
+  name: keyof Profile; // اطمینان از نام‌های صحیح فیلدها
   value?: string;
   status: Status;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   editable?: boolean;
+  error?: string;
+  inputRef?: React.Ref<HTMLInputElement>;
 }) => {
-  // اگر editable=false بود، آیکون مداد نمایش داده نمی‌شود و فقط خواندنی است
   const isReadOnly = !editable;
 
   return (
     <div className="w-full">
       <div className="flex justify-between items-center mb-1">
-        <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+        <label
+          className={`text-sm font-semibold ${
+            error
+              ? "text-red-600 dark:text-red-400"
+              : "text-gray-700 dark:text-gray-300"
+          }`}
+        >
           {label}
         </label>
         {status === "verified" ? (
-          <IoCheckmarkCircle className="text-teal-500 text-xl" title="تایید شده" />
+          <IoCheckmarkCircle
+            className="text-teal-500 text-xl"
+            title="تایید شده"
+          />
         ) : (
-          <IoCloseCircle className="text-red-500 text-xl" title="نیاز به تایید" />
+          <IoCloseCircle
+            className="text-red-500 text-xl"
+            title="نیاز به تایید"
+          />
         )}
       </div>
+
+      {/* ⚠️ پیام خطا */}
+      {error && (
+        <p className="flex items-center text-xs text-red-600 dark:text-red-400 mb-1">
+          <IoWarning className="ml-1" />
+          {error}
+        </p>
+      )}
+
       <div className="relative">
         <input
           type="text"
           name={name}
           value={value || ""}
-          readOnly={isReadOnly} // استفاده از isReadOnly
+          readOnly={isReadOnly}
           onChange={onChange}
-          className={`w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl p-3 pr-10 border border-gray-300 dark:border-gray-600 focus:outline-none ${
-            !isReadOnly // اگر فقط خواندنی نباشد، فوکوس اعمال می‌شود
-              ? "focus:ring-4 focus:ring-teal-500/50"
-              : "cursor-default opacity-80"
+          ref={inputRef} // ارجاع برای فوکوس
+          className={`w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl p-3 pr-10 border ${
+            error
+              ? "border-red-500 focus:ring-4 focus:ring-red-500/50"
+              : "border-gray-300 dark:border-gray-600 focus:ring-4 focus:ring-teal-500/50"
+          } focus:outline-none ${
+            isReadOnly ? "cursor-default opacity-80" : ""
           } transition-all duration-300`}
         />
-        {!isReadOnly && ( // نمایش مداد فقط در حالت قابل ویرایش
+        {!isReadOnly && (
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400">
             <IoPencil className="w-4 h-4" />
           </div>
@@ -116,18 +163,24 @@ const ProfilePage = () => {
   const [loading, setLoading] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [birthDate, setBirthDate] = useState<DateObject | null>(null);
-  // ✨ حالت جدید: آیا پروفایل نهایی شده و قفل است؟
   const [isProfileFinalized, setIsProfileFinalized] = useState(false);
+
+  // ❌ حالت خطا و ارجاع‌دهنده‌ها
+  const [errors, setErrors] = useState<ProfileErrors>({});
+  const fieldRefs = useRef<{
+    [key: string]: HTMLInputElement | HTMLDivElement | null;
+  }>({});
+  const locationRef = useRef<HTMLDivElement>(null);
+  const rulesRef = useRef<HTMLDivElement>(null);
 
   // 🚀 دریافت پروفایل از API
   useEffect(() => {
     const fetchProfile = async () => {
+      // ... (منطق fetchProfile بدون تغییر)
       try {
         setLoading(true);
         const data = await getProfile();
 
-        // 💡 منطق نهایی‌سازی: فرض می‌کنیم اگر کد ملی ثبت شده باشد، پروفایل نهایی است.
-        // بهترین حالت این است که از یک فیلد وضعیت (مثل data.is_finalized) استفاده کنید.
         const finalizedStatus = !!data.national_code; // یا data.is_finalized
         setIsProfileFinalized(finalizedStatus);
 
@@ -135,7 +188,6 @@ const ProfilePage = () => {
           ? toEnglishDigits(data.birthday)
           : undefined;
 
-        // اگر تاریخ به‌صورت شمسی وارد شده (مثلاً ۱۴۰۴-۰۸-۰۱)، آن را به میلادی تبدیل کن
         const normalizedBirthday =
           englishBirthday && englishBirthday.startsWith("13")
             ? persianToGregorian(englishBirthday)
@@ -154,7 +206,6 @@ const ProfilePage = () => {
           const persianDateObj = new DateObject({
             date: normalizedBirthday,
             calendar: gregorian,
-            // 🛑 نکته: اگر سرور تاریخ میلادی را در data.birthday برگرداند، این تبدیل کار می‌کند.
           }).convert(persian);
           setBirthDate(persianDateObj);
         }
@@ -167,22 +218,25 @@ const ProfilePage = () => {
     fetchProfile();
   }, []);
 
-  // ⚠️ تمامی فیلدها تنها زمانی قابل تغییر هستند که پروفایل نهایی نشده باشد
   const isEditable = !isProfileFinalized;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isEditable) return; // جلوگیری از تغییر در حالت نهایی
+    if (!isEditable) return;
     setProfile({ ...profile, [e.target.name]: e.target.value });
+    setErrors((prev) => ({ ...prev, [e.target.name]: undefined })); // پاک کردن خطای مربوطه
   };
 
-  // 📅 مدیریت تغییر تاریخ تولد
   const handleDateChange = (date: DateObject | DateObject[] | null) => {
-    if (!isEditable) return; // جلوگیری از تغییر در حالت نهایی
+    if (!isEditable) return;
+    setErrors((prev) => ({ ...prev, birthday: undefined })); // پاک کردن خطای تاریخ
+
     const selectedDate = Array.isArray(date) ? date[0] : date;
     setBirthDate(selectedDate);
 
     if (selectedDate) {
-      const gregorianDate = selectedDate.convert(gregorian).format("YYYY-MM-DD");
+      const gregorianDate = selectedDate
+        .convert(gregorian)
+        .format("YYYY-MM-DD");
       setProfile((prev) => ({ ...prev, birthday: gregorianDate }));
     } else {
       setProfile((prev) => ({ ...prev, birthday: undefined }));
@@ -194,14 +248,104 @@ const ProfilePage = () => {
     lng: number;
     address: string;
   }) => {
-    if (!isEditable) return; // جلوگیری از تغییر در حالت نهایی
+    if (!isEditable) return;
     setCafeLocation(location.address);
     setProfile({ ...profile, address: location.address });
+    setErrors((prev) => ({ ...prev, location: undefined })); // پاک کردن خطای لوکیشن
   };
+
+  // ----------------------------------------------------
+  // 📝 تابع اعتبارسنجی فرانت‌اند
+  // ----------------------------------------------------
+  const validateForm = (): boolean => {
+    const newErrors: ProfileErrors = {};
+    let firstErrorKey: string | undefined = undefined;
+
+    // 1. اعتبارسنجی فیلدهای متنی اجباری
+    const requiredFields: (keyof Profile)[] = [
+      "full_name",
+      "national_code",
+      "last_name",
+      "email",
+      "birthday",
+      "sheba",
+      "link",
+    ];
+
+    requiredFields.forEach((field) => {
+      if (!profile[field] || String(profile[field]).trim() === "") {
+        newErrors[field] = "این فیلد اجباری است و نمی‌تواند خالی باشد.";
+        if (!firstErrorKey) firstErrorKey = field;
+      }
+    });
+
+    // 2. اعتبارسنجی کد ملی
+    const englishNationalCode = toEnglishDigits(profile.national_code);
+    if (englishNationalCode && !/^\d{10}$/.test(englishNationalCode)) {
+      newErrors.national_code = "کد ملی باید دقیقاً 10 رقم باشد.";
+      if (!firstErrorKey) firstErrorKey = "national_code";
+    }
+
+    // 3. اعتبارسنجی ایمیل (ساده)
+    if (profile.email && !/^\S+@\S+\.\S+$/.test(profile.email)) {
+      newErrors.email = "فرمت ایمیل نامعتبر است.";
+      if (!firstErrorKey) firstErrorKey = "email";
+    }
+
+    // 4. اعتبارسنجی موقعیت مکانی
+    if (!profile.address || cafeLocation === "") {
+      newErrors.location = "انتخاب موقعیت مکانی روی نقشه الزامی است.";
+      if (!firstErrorKey) firstErrorKey = "location";
+    }
+
+    // 5. اعتبارسنجی قوانین
+    const rulesChecked = document.getElementById("rules") as HTMLInputElement;
+    if (!rulesChecked || !rulesChecked.checked) {
+      newErrors.rules = "تایید قوانین ثبت نام الزامی است.";
+      if (!firstErrorKey) firstErrorKey = "rules";
+    }
+
+    setErrors(newErrors);
+
+    // ✨ مدیریت فوکوس و اسکرول ✨
+    if (firstErrorKey) {
+      // برای فیلدهای معمول
+      const ref = fieldRefs.current[firstErrorKey];
+      if (ref) {
+        ref.scrollIntoView({ behavior: "smooth", block: "center" });
+        (ref as HTMLInputElement)?.focus?.();
+      }
+      // برای LocationPicker
+      else if (firstErrorKey === "location" && locationRef.current) {
+        locationRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+      // برای قوانین
+      else if (firstErrorKey === "rules" && rulesRef.current) {
+        rulesRef.current.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+
+    return Object.keys(newErrors).length === 0;
+  };
+  // ----------------------------------------------------
 
   // 🧾 ارسال فرم
   const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!isEditable) return;
+
+    if (!validateForm()) {
+      alert("لطفاً خطاهای موجود در فرم را تصحیح کنید.");
+      return;
+    }
+
     setIsSavingProfile(true);
 
     const payload = { ...profile };
@@ -217,11 +361,10 @@ const ProfilePage = () => {
     try {
       await updateProfile(payload);
       alert("✅ اطلاعات پروفایل با موفقیت به‌روزرسانی شد");
-      // ✨ پس از ثبت موفق، پروفایل را نهایی‌شده اعلام می‌کنیم
       setIsProfileFinalized(true);
     } catch (err: any) {
       console.error("❌ خطا در ذخیره پروفایل:", err);
-      alert("خطا در ذخیره اطلاعات پروفایل!");
+      alert("خطا در ذخیره اطلاعات پروفایل! لطفاً دوباره تلاش کنید.");
     } finally {
       setIsSavingProfile(false);
     }
@@ -252,12 +395,14 @@ const ProfilePage = () => {
               </span>
             )}
           </h2>
-          
+
           {isProfileFinalized && (
             <div className="p-4 rounded-xl bg-yellow-100 dark:bg-yellow-800/50 border border-yellow-300 dark:border-yellow-700 text-yellow-800 dark:text-yellow-200 font-medium">
               <p className="flex items-start">
                 <IoCloseCircle className="text-2xl flex-shrink-0 ml-2 mt-0.5" />
-                **توجه:** اطلاعات پروفایل شما **ثبت نهایی** شده و دیگر قابل ویرایش نیستند. در صورت نیاز به تغییر در اطلاعات ثبت شده، لطفاً با **پشتیبانی** تماس حاصل فرمایید.
+                **توجه:** اطلاعات پروفایل شما **ثبت نهایی** شده و دیگر قابل
+                ویرایش نیستند. در صورت نیاز به تغییر در اطلاعات ثبت شده، لطفاً
+                با **پشتیبانی** تماس حاصل فرمایید.
               </p>
             </div>
           )}
@@ -266,45 +411,150 @@ const ProfilePage = () => {
             onSubmit={handleSubmitProfile}
             className="grid grid-cols-1 md:grid-cols-2 gap-x-10 gap-y-6"
           >
-            {/* همه فیلدها بسته به isProfileFinalized فقط خواندنی می‌شوند */}
-            <InfoField label="نام و نام خانوادگی" name="full_name" value={profile.full_name} status={profile.full_name ? "verified" : "unverified"} onChange={handleChange} editable={isEditable} />
-            <InfoField label="کد ملی (10 رقم)" name="national_code" value={profile.national_code} status={profile.national_code ? "verified" : "unverified"} onChange={handleChange} />
-            
-            {/* این دو فیلد از ابتدا هم غیرقابل ویرایش بودند، پس شرط isEditable را به editable موجود اضافه می‌کنیم */}
-            <InfoField label="نام کاربری" name="first_name" value={profile.first_name} status={profile.first_name ? "verified" : "unverified"} onChange={handleChange} editable={false}/>
-            <InfoField label=" نام خانوادگی لاتین" name="last_name" value={profile.last_name} status={profile.last_name ? "verified" : "unverified"} onChange={handleChange} editable={isEditable} />
-            <InfoField label="ایمیل" name="email" value={profile.email} status={profile.email ? "verified" : "unverified"} onChange={handleChange} editable={isEditable} />
-            <InfoField label="شماره موبایل" name="mobile" value={profile.mobile} status={profile.mobile ? "verified" : "unverified"} onChange={handleChange} editable={false} />
+            <InfoField
+              label="نام و نام خانوادگی (اجباری)"
+              name="full_name"
+              value={profile.full_name}
+              status={profile.full_name ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.full_name}
+              inputRef={(el) => (fieldRefs.current["full_name"] = el)}
+            />
+            <InfoField
+              label="کد ملی (10 رقم اجباری)"
+              name="national_code"
+              value={profile.national_code}
+              status={profile.national_code ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.national_code}
+              inputRef={(el) => (fieldRefs.current["national_code"] = el)}
+            />
+
+            <InfoField
+              label="نام کاربری"
+              name="first_name"
+              value={profile.first_name}
+              status={profile.first_name ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={false}
+            />
+
+            <InfoField
+              label=" نام خانوادگی لاتین (اجباری)"
+              name="last_name"
+              value={profile.last_name}
+              status={profile.last_name ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.last_name}
+              inputRef={(el) => (fieldRefs.current["last_name"] = el)}
+            />
+
+            <InfoField
+              label="ایمیل (اجباری)"
+              name="email"
+              value={profile.email}
+              status={profile.email ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.email}
+              inputRef={(el) => (fieldRefs.current["email"] = el)}
+            />
+
+            <InfoField
+              label="شماره موبایل"
+              name="mobile"
+              value={profile.mobile}
+              status={profile.mobile ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={false}
+            />
 
             {/* 📅 تاریخ تولد شمسی */}
             <div className="w-full">
-              <label className="text-sm font-semibold block text-gray-700 dark:text-gray-300 mb-1">
-                تاریخ تولد
+              <label
+                className={`text-sm font-semibold block mb-1 ${
+                  errors.birthday
+                    ? "text-red-600 dark:text-red-400"
+                    : "text-gray-700 dark:text-gray-300"
+                }`}
+              >
+                تاریخ تولد (اجباری)
               </label>
+              {errors.birthday && (
+                <p className="flex items-center text-xs text-red-600 dark:text-red-400 mb-1">
+                  <IoWarning className="ml-1" />
+                  {errors.birthday}
+                </p>
+              )}
               <DatePicker
                 value={birthDate}
                 onChange={handleDateChange}
                 format="YYYY/MM/DD"
                 calendar={persian}
                 locale={persian_fa}
-                // ✨ تاریخ تولد در حالت نهایی، فقط خواندنی می‌شود
-                readOnly={!isEditable} 
-                inputClass={`w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl p-3 pr-10 border border-gray-300 dark:border-gray-600 focus:outline-none ${
-                  isEditable
-                    ? "focus:ring-4 focus:ring-teal-500/50"
-                    : "cursor-default opacity-80"
+                readOnly={!isEditable}
+                // ✨ ارجاع دهنده برای فوکوس (اگرچه ممکن است DatePicker اجازه فوکوس ندهد)
+                ref={(el) => {
+                  // اطمینان حاصل کنید که el وجود دارد
+                  if (el && el.container) {
+                    // استفاده از Optional Chaining برای دسترسی ایمن
+                    fieldRefs.current["birthday"] = el.container
+                      .children[0] as HTMLInputElement;
+                  } else if (el === null) {
+                    // در صورت Unmount، مرجع را پاک کن
+                    fieldRefs.current["birthday"] = null;
+                  }
+                }}
+                inputClass={`w-full bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl p-3 pr-10 border ${
+                  errors.birthday
+                    ? "border-red-500 focus:ring-4 focus:ring-red-500/50"
+                    : "border-gray-300 dark:border-gray-600 focus:ring-4 focus:ring-teal-500/50"
+                } focus:outline-none ${
+                  !isEditable ? "cursor-default opacity-80" : ""
                 } transition-all duration-300`}
               />
             </div>
 
-            <InfoField label="شماره شبا" name="sheba" value={profile.sheba} status={profile.sheba ? "verified" : "unverified"} onChange={handleChange} editable={isEditable} />
-            <InfoField label="لینک سایت یا پیج اینستاگرام شما!" name="link" value={profile.link} status={profile.link ? "verified" : "unverified"} onChange={handleChange} editable={isEditable} />
+            <InfoField
+              label="شماره شبا (اجباری)"
+              name="sheba"
+              value={profile.sheba}
+              status={profile.sheba ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.sheba}
+              inputRef={(el) => (fieldRefs.current["sheba"] = el)}
+            />
+
+            <InfoField
+              label="لینک سایت یا پیج اینستاگرام شما! (اجباری)"
+              name="link"
+              value={profile.link}
+              status={profile.link ? "verified" : "unverified"}
+              onChange={handleChange}
+              editable={isEditable}
+              error={errors.link}
+              inputRef={(el) => (fieldRefs.current["link"] = el)}
+            />
 
             {/* 📍 موقعیت مکانی */}
-            <div className="w-full md:col-span-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div
+              className="w-full md:col-span-2 pt-4 border-t border-gray-200 dark:border-gray-700"
+              ref={locationRef}
+            >
               <div className="flex justify-between items-center mb-3">
-                <label className="text-lg font-bold text-gray-800 dark:text-gray-200 flex items-center">
-                  <FiMapPin className="ml-2 text-indigo-600" /> موقعیت مکانی شعبه اصلی
+                <label
+                  className={`text-lg font-bold flex items-center ${
+                    errors.location
+                      ? "text-red-600 dark:text-red-400"
+                      : "text-gray-800 dark:text-gray-200"
+                  }`}
+                >
+                  <FiMapPin className="ml-2 text-indigo-600" /> موقعیت مکانی
+                  شعبه اصلی (اجباری)
                 </label>
                 {cafeLocation ? (
                   <IoCheckmarkCircle className="text-teal-500 text-2xl" />
@@ -312,16 +562,17 @@ const ProfilePage = () => {
                   <IoCloseCircle className="text-red-500 text-2xl" />
                 )}
               </div>
-              {/* کامپوننت LocationPicker باید منطق readOnly را داخلی خود اعمال کند. 
-                  در اینجا ما با استفاده از شرط isEditable از تغییر جلوگیری می‌کنیم. */}
+              {errors.location && (
+                <p className="flex items-center text-sm font-medium text-red-600 dark:text-red-400 mb-2">
+                  <IoWarning className="ml-1 text-lg" />
+                  {errors.location}
+                </p>
+              )}
               <LocationPicker
                 onLocationSelect={handleLocationSelect}
                 currentLocation={cafeLocation}
-                // ⚠️ نکته: اگر LocationPicker پروپ readOnly نداشت، باید آن را اضافه می‌کردید
-                // یا دکمه باز شدن نقشه را در اینجا پنهان می‌کردید.
-                // در حال حاضر، ما در handleLocationSelect از تغییر جلوگیری می‌کنیم.
               />
-              {!cafeLocation && isEditable && ( // پیام راهنما فقط در حالت قابل ویرایش
+              {!cafeLocation && isEditable && (
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                   برای انتخاب موقعیت دقیق کافه روی نقشه کلیک کنید
                 </p>
@@ -331,19 +582,36 @@ const ProfilePage = () => {
             {/* ✅ دکمه ثبت - فقط در صورت نهایی نشدن نمایش داده می‌شود */}
             {isEditable && (
               <div className="md:col-span-2 mt-8 flex flex-col sm:flex-row items-center justify-between gap-6 pt-6 border-t border-gray-300 dark:border-gray-700">
-                <div className="flex items-center">
+                <div className="flex items-center" ref={rulesRef}>
                   <input
                     id="rules"
                     type="checkbox"
-                    className="h-5 w-5 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors"
-                    required
+                    className={`h-5 w-5 rounded border-gray-400 text-indigo-600 focus:ring-indigo-500 cursor-pointer transition-colors ${
+                      errors.rules ? "border-red-500" : ""
+                    }`}
+                    // required
                   />
-                  <label htmlFor="rules" className="mr-3 text-sm text-gray-700 dark:text-gray-300">
+                  <label
+                    htmlFor="rules"
+                    className={`mr-3 text-sm ${
+                      errors.rules
+                        ? "text-red-600 dark:text-red-400 font-bold"
+                        : "text-gray-700 dark:text-gray-300"
+                    }`}
+                  >
                     موافق{" "}
-                    <a href="#" className="font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors">
+                    <a
+                      href="#"
+                      className="font-extrabold text-indigo-600 dark:text-indigo-400 hover:underline transition-colors"
+                    >
                       قوانین
                     </a>{" "}
                     ثبت نام هستم.
+                    {errors.rules && (
+                      <span className="mr-2 text-xs font-normal">
+                        ({errors.rules})
+                      </span>
+                    )}
                   </label>
                 </div>
 
@@ -354,7 +622,8 @@ const ProfilePage = () => {
                 >
                   {isSavingProfile ? (
                     <>
-                      <IoIosRefresh className="animate-spin ml-2 text-xl" /> در حال ذخیره...
+                      <IoIosRefresh className="animate-spin ml-2 text-xl" /> در
+                      حال ذخیره...
                     </>
                   ) : (
                     <>
