@@ -35,7 +35,7 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
   };
 
   const menuItems = [
-    { title: "رویداد ها", icon: <IoHomeOutline size={22} />, path: "/" },
+    { title: "رویداد ها", icon: <IoHomeOutline size={22} />, path: "/events" },
     { title: "سفارشات", icon: <BsReceipt size={22} />, path: "/orders" },
     {
       title: "اعلانات",
@@ -46,6 +46,11 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
       title: "گزارش مالی",
       icon: <IoPieChartOutline size={22} />,
       path: "/financial-report",
+    },
+    {
+      title: " مدیریت رویداد",
+      icon: <IoPieChartOutline size={22} />,
+      path: "/",
     },
     { title: "پروفایل", icon: <IoPersonOutline size={22} />, path: "/profile" },
     {

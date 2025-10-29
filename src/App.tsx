@@ -10,6 +10,7 @@ import LoadingSpinner from "./components/common/LoadingSpinner";
 import Roleprivacy from "./pages/Roleprivacy";
 import About from "./pages/About";
 import CafeInfo from "./pages/CafeInfo";
+import Financialanalysis from "./pages/Financialanalysis";
 
 const EventsPage = lazy(() => import("./pages/EventsPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
@@ -27,38 +28,7 @@ function App() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { mode } = useAppSelector((state) => state.theme);
 
-  useEffect(() => {
-    const handleOnline = () => {
-      setIsOnline(true);
-      alert("✅ اینترنت وصل شد");
-    };
-
-    const handleOffline = () => {
-      setIsOnline(false);
-      alert("🚫 اتصال به اینترنت قطع شد");
-    };
-
-    window.addEventListener("online", handleOnline);
-    window.addEventListener("offline", handleOffline);
-
-    // ✨ تغییر 2: اگر در رفرش اولیه، Access Token وجود داشت و معتبر بود،
-    // می‌توانستید در اینجا یک تماس API برای اعتبارسنجی توکن بگذارید.
-    // اما برای سادگی، فعلاً فقط بر اساس وجود آن عمل می‌کنیم.
-
-    return () => {
-      window.removeEventListener("online", handleOnline);
-      window.removeEventListener("offline", handleOffline);
-    };
-  }, []); // این useEffect فقط یک بار هنگام Mount شدن اجرا می‌شود
-
-  // جلوگیری از رندر در حالت آفلاین
-  if (!isOnline) {
-    return (
-      <div className="flex items-center justify-center h-screen text-xl font-semibold text-red-500 bg-gray-900">
-        🚫 اتصال اینترنت قطع است. لطفاً اینترنت خود را بررسی کنید.
-      </div>
-    );
-  }
+ 
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -87,13 +57,17 @@ function App() {
               path="/"
               element={<DashboardLayout onLogout={handleLogout} />}
             >
-              <Route index element={<EventsPage />} />
+              <Route index element={<Financialanalysis />} />
               <Route path="orders" element={<OrdersPage />} />
               <Route path="orders/:orderId" element={<OrderDetailsPage />} />
               <Route path="notifications" element={<NotificationsPage />} />
               <Route
                 path="financial-report"
                 element={<FinancialReportPage />}
+              />
+              <Route
+                path="events"
+                element={<EventsPage />}
               />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="cafe" element={<CafeInfo />} />
