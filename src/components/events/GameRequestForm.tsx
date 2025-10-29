@@ -2,12 +2,12 @@
 
 import { useState } from "react";
 // ✅ کامپوننت createEvent را مستقیماً import می‌کنیم.
-import { createEvent } from "../../services/eventService"; 
+import { createEvent } from "../../services/eventService";
 
 // --- آیکون‌ها ---
 
 // ✅ اضافه شدن تایپ برای props شامل className
-const CheckCircleIcon = ({ className }: { className: string }) => ( 
+const CheckCircleIcon = ({ className }: { className: string }) => (
   <svg
     stroke="currentColor"
     fill="currentColor"
@@ -30,17 +30,18 @@ interface FormData {
 }
 
 // برای سادگی، Errors را از روی FormData می‌سازیم
-type Errors = Record<keyof FormData, string | undefined>; 
+type Errors = Record<keyof FormData, string | undefined>;
 
 // ✅ تعریف اینترفیس برای Props کامپوننت
-interface GameRequestFormProps { 
+interface GameRequestFormProps {
   category: string;
   onBack: () => void;
 }
 
 // ✅ اضافه شدن تایپ برای props
-const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => { 
-  const [formData, setFormData] = useState<FormData>({ // ✅ تعریف نوع برای useState
+const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
+  const [formData, setFormData] = useState<FormData>({
+    // ✅ تعریف نوع برای useState
     minPlayers: "",
     maxPlayers: "",
     duration: "",
@@ -55,7 +56,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
     "w-full bg-gray-100 dark:bg-gray-700 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-red-400 dark:focus:ring-red-500 text-gray-800 dark:text-gray-200 transition-all duration-300";
 
   // ✅ تعریف صریح نوع برای newErrors
-  const validateForm = () => { 
+  const validateForm = () => {
     const newErrors: Partial<Errors> = {}; // از Partial استفاده کردیم
     const min = parseInt(formData.minPlayers);
     const max = parseInt(formData.maxPlayers);
@@ -76,18 +77,20 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
   };
 
   // ✅ اضافه شدن تایپ برای e در handleInputChange
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     // ✅ استفاده از name به عنوان keyof FormData
-    setFormData((prev) => ({ ...prev, [name as keyof FormData]: value })); 
-    
+    setFormData((prev) => ({ ...prev, [name as keyof FormData]: value }));
+
     // ✅ رفع خطای TS7053/TS7006 با چک کردن صریح نوع errors
-    if (errors[name as keyof FormData]) 
-        setErrors((prev) => ({ ...prev, [name as keyof FormData]: undefined }));
+    if (errors[name as keyof FormData])
+      setErrors((prev) => ({ ...prev, [name as keyof FormData]: undefined }));
   };
 
   // ✅ اضافه شدن تایپ برای e در handleSubmit
-  const handleSubmit = async (e: React.FormEvent) => { 
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiError("");
     if (!validateForm()) return;
@@ -110,7 +113,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
       setFormStep("success");
     } catch (err) {
       // ✅ رفع خطای TS18046: 'err' is of type 'unknown'.
-      const error = err as Error; 
+      const error = err as Error;
       setApiError(error.message || "خطا در برقراری ارتباط با سرور.");
       console.error("❌ createEvent error:", error);
     } finally {
@@ -122,7 +125,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
     return (
       <div className="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-lg text-center animate-fade-in">
         {/* ✅ className به آیکون پاس داده شد */}
-        <CheckCircleIcon className="text-green-500 mx-auto mb-4" /> 
+        <CheckCircleIcon className="text-green-500 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
           درخواست با موفقیت ثبت شد!
         </h2>
@@ -149,7 +152,6 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
           onClick={onBack}
           className="flex items-center gap-2 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-sm font-semibold rounded-lg hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
         >
-           
           <span className="dark:text-slate-100">بازگشت</span>
         </button>
       </header>
@@ -179,7 +181,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
             />
           </div>
           {/* ✅ دسترسی به خطاهای تایپ شده */}
-          {(errors.minPlayers || errors.maxPlayers) && ( 
+          {(errors.minPlayers || errors.maxPlayers) && (
             <p className="text-red-500 text-sm mt-2">
               {errors.minPlayers || errors.maxPlayers}
             </p>
@@ -199,7 +201,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
             className={inputBaseClasses}
           />
           {/* ✅ دسترسی به خطای تایپ شده */}
-          {errors.duration && ( 
+          {errors.duration && (
             <p className="text-red-500 text-sm mt-2">{errors.duration}</p>
           )}
         </div>
@@ -217,7 +219,7 @@ const GameRequestForm = ({ category, onBack }: GameRequestFormProps) => {
             className={`${inputBaseClasses} resize-none`}
           />
           {/* ✅ دسترسی به خطای تایپ شده */}
-          {errors.description && ( 
+          {errors.description && (
             <p className="text-red-500 text-sm mt-2">{errors.description}</p>
           )}
         </div>
