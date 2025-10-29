@@ -11,6 +11,7 @@ import Roleprivacy from "./pages/Roleprivacy";
 import About from "./pages/About";
 import CafeInfo from "./pages/CafeInfo";
 import Financialanalysis from "./pages/Financialanalysis";
+import AnnouncementsPage from "./pages/AnnouncementsPage";
 
 const EventsPage = lazy(() => import("./pages/EventsPage"));
 const OrdersPage = lazy(() => import("./pages/OrdersPage"));
@@ -71,6 +72,7 @@ function App() {
               />
               <Route path="profile" element={<ProfilePage />} />
               <Route path="cafe" element={<CafeInfo />} />
+              <Route path="announcements" element={<AnnouncementsPage />} />
               <Route path="report-issue" element={<ReportIssuePage />} />
               <Route path="support" element={<SupportPage />} />
               <Route path="faq" element={<FaqPage />} />

@@ -1,17 +1,14 @@
 import { NavLink } from "react-router-dom";
-import { useAppDispatch, useAppSelector } from "../../app/hooks";
-import { toggleTheme } from "../../features/theme/themeSlice";
 import {
   IoHomeOutline,
   IoNotificationsOutline,
-  IoPieChartOutline,
+  IoPieChartOutline, 
   IoPersonOutline,
   IoHeadsetOutline,
   IoShieldCheckmarkOutline,
   IoInformationCircleOutline,
   IoLogOutOutline,
-  IoSunnyOutline,
-  IoMoonOutline,
+  IoPricetagOutline, 
 } from "react-icons/io5";
 import {
   BsReceipt,
@@ -23,41 +20,50 @@ import avatar from "../../assets/mmdi.jpg";
 interface Props {
   onLogoutClick: () => void;
   isOpen: boolean;
-  onCloseSidebar: () => void; // ✅ پراپ جدید
+  onCloseSidebar: () => void;
 }
 
 const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
-  const dispatch = useAppDispatch();
-  const { mode } = useAppSelector((state) => state.theme);
-
-  const handleToggleTheme = () => {
-    dispatch(toggleTheme());
-  };
+  // این توابع حذف شدند زیرا در این فایل استفاده نشده و مربوط به context خارجی هستند
+  // const dispatch = useAppDispatch();
+  // const { mode } = useAppSelector((state) => state.theme);
+  // const handleToggleTheme = () => { dispatch(toggleTheme()); };
 
   const menuItems = [
-    { title: "رویداد ها", icon: <IoHomeOutline size={22} />, path: "/events" },
-    { title: "سفارشات", icon: <BsReceipt size={22} />, path: "/orders" },
     {
-      title: "اعلانات",
-      icon: <IoNotificationsOutline size={22} />,
-      path: "/notifications",
-    },
-    {
-      title: "گزارش مالی",
-      icon: <IoPieChartOutline size={22} />,
-      path: "/financial-report",
-    },
-    {
-      title: " مدیریت رویداد",
+      title: "مدیریت رویداد",
       icon: <IoPieChartOutline size={22} />,
       path: "/",
     },
+    { 
+      title: "رویداد ها", 
+      icon: <IoPricetagOutline size={22} />, 
+      path: "/events" 
+    },
+    { title: "سفارشات", icon: <BsReceipt size={22} />, path: "/orders" },
+    // {
+    //   title: "اعلانات",
+    //   icon: <IoNotificationsOutline size={22} />,
+    //   path: "/notifications",
+    // },
+    {
+      title: "گزارش مالی",
+      icon: <IoPieChartOutline size={22} />, 
+      path: "/financial-report",
+    },
+    
     { title: "پروفایل", icon: <IoPersonOutline size={22} />, path: "/profile" },
     {
       title: "اطلاعات کافه",
-      icon: <IoPersonOutline size={22} />,
+      icon: <IoHomeOutline size={22} />, 
       path: "/cafe",
     },
+    {
+      title: "اطلاع رسانی",
+      icon: <IoHomeOutline size={22} />, 
+      path: "/announcements",
+    },
+
   ];
 
   const supportItems = [
@@ -88,40 +94,47 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
     },
   ];
 
+  // ✨ استایل مدرن و دارای افکت Hover
   const linkClasses = ({ isActive }: { isActive: boolean }) =>
-    `flex items-center gap-x-4 p-3 rounded-xl transition-colors cursor-pointer ${
+    `flex items-center gap-x-4 p-3 rounded-2xl transition-all duration-300 transform font-medium relative overflow-hidden group ${
       isActive
-        ? "bg-primary-red text-white shadow-md"
-        : "hover:bg-gray-100 dark:hover:bg-gray-700"
+        ? "text-white bg-primary-red shadow-xl shadow-red-500/50" // افکت فعال
+        : "text-gray-700 dark:text-gray-300 hover:text-red-500 dark:hover:text-red-400 hover:bg-red-500/10 dark:hover:bg-gray-700"
     }`;
+    
+  // ✨ استایل آواتار: حفظ گرادیان و افزودن افکت Pulse در حالت عادی
+  const avatarContainerClasses = `p-1 rounded-full bg-primary-red shadow-2xl shadow-primary-red/40 transition-transform duration-300 transform hover:scale-[1.05] relative after:content-[''] after:absolute after:inset-0 after:rounded-full after:bg-primary-red after:opacity-50 after:animate-pulse`;
+  
+  // ✨ استایل آواتار در حالت Hover (برای جلوگیری از تداخل با Pulse)
+  const avatarImageClasses = "w-24 h-24 rounded-full object-cover border-4 border-white dark:border-gray-800 relative z-10";
+
 
   return (
+    // ✨ تغییرات: انیمیشن خفن‌تر (skew و translate) و Shadow رنگی
     <aside
       className={`bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 
-        w-72 p-4 flex flex-col shadow-lg flex-shrink-0
-        fixed top-0 right-0 h-screen z-30 transition-transform duration-300 ease-in-out
-        lg:sticky lg:top-4 lg:h-2/3 lg:rounded-3xl lg:ml-4 lg:translate-x-0
-        ${isOpen ? "translate-x-0" : "translate-x-full"}`}
+        w-72 p-4 flex flex-col shadow-2xl shadow-indigo-500/30 dark:shadow-indigo-900/50 flex-shrink-0
+        fixed top-0 right-0 h-screen z-40 transition-all duration-500 ease-in-out
+        lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:rounded-3xl lg:ml-4 lg:translate-x-0
+        ${isOpen 
+            ? "translate-x-0 rotate-0 skew-y-0" 
+            : "translate-x-full rotate-1 skew-y-1" // افکت ورود/خروج 3D
+        } lg:rotate-0 lg:skew-y-0`}
     >
-      <div className="flex flex-col items-center justify-center my-6">
-        <img
-          src={avatar}
-          alt="User Avatar"
-          className="w-24 h-24 rounded-full object-cover"
-        />
-        <button
-          onClick={handleToggleTheme}
-          className="mt-4 p-2 rounded-full bg-gray-100 dark:bg-gray-700"
-          aria-label="Toggle theme"
-        >
-          {mode === "light" ? (
-            <IoMoonOutline size={20} />
-          ) : (
-            <IoSunnyOutline size={20} />
-          )}
-        </button>
+      
+      {/* 1. بخش آواتار و پروفایل */}
+      <div className="flex flex-col items-center my-6">
+        <div className={avatarContainerClasses}>
+            <img
+                src={avatar}
+                alt="User Avatar"
+                className={avatarImageClasses}
+            />
+        </div>
+        
       </div>
 
+      {/* 2. ناوبری اصلی */}
       <nav className="flex-1 flex flex-col justify-between overflow-y-auto scrollbar-none">
         <ul className="space-y-2">
           {menuItems.map((item) => (
@@ -130,26 +143,35 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
                 to={item.path}
                 className={linkClasses}
                 end
-                onClick={onCloseSidebar} // ✅ سایدبار بسته می‌شود
+                onClick={onCloseSidebar} 
               >
-                {item.icon}
-                <span className="font-semibold">{item.title}</span>
+                 {/* ✨ افکت پس‌زمینه در Hover */}
+                 <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+
+                <div className="relative z-10 flex items-center gap-x-4">
+                    {item.icon}
+                    <span className="font-semibold">{item.title}</span>
+                </div>
               </NavLink>
             </li>
           ))}
         </ul>
 
+        {/* 3. بخش پشتیبانی و خروج */}
         <div>
-          <ul className="space-y-2 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <ul className="space-y-2 pt-4 mt-4 border-t border-gray-200 dark:border-gray-700">
             {supportItems.map((item) => (
               <li key={item.title}>
                 <NavLink
                   to={item.path}
                   className={linkClasses}
-                  onClick={onCloseSidebar} // ✅ در این بخش هم بسته می‌شود
+                  onClick={onCloseSidebar} 
                 >
-                  {item.icon}
-                  <span className="font-semibold">{item.title}</span>
+                    <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-10 transition-opacity duration-200"></div>
+                    <div className="relative z-10 flex items-center gap-x-4">
+                        {item.icon}
+                        <span className="font-semibold">{item.title}</span>
+                    </div>
                 </NavLink>
               </li>
             ))}
@@ -158,9 +180,10 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
             <div
               onClick={() => {
                 onLogoutClick();
-                onCloseSidebar(); // ✅ موقع خروج هم بسته می‌شود
+                onCloseSidebar();
               }}
-              className="flex items-center gap-x-4 p-3 rounded-xl transition-colors cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700"
+              // ✨ استایل خروج: ساده و قابل تفکیک
+              className="flex items-center gap-x-4 p-3 rounded-2xl transition-colors cursor-pointer text-gray-500 dark:text-gray-400 hover:text-red-500 hover:bg-red-500/10 dark:hover:bg-gray-700"
             >
               <IoLogOutOutline size={22} />
               <span className="font-semibold">خروج</span>
@@ -168,6 +191,8 @@ const Sidebar = ({ onLogoutClick, isOpen, onCloseSidebar }: Props) => {
           </div>
         </div>
       </nav>
+      
+      {/* 4. حذف Overlay موبایل (طبق درخواست) */}
     </aside>
   );
 };

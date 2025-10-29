@@ -108,9 +108,7 @@ const Header = ({ onMenuClick }: Props) => {
           </div>
            {/* آیکون کیبورد در سمت چپ آیکون جستجو، شبیه عکس */}
           <div className="absolute inset-y-0 left-0 hidden md:flex items-center pl-8 ml-3 pointer-events-none border-r border-gray-300 dark:border-gray-600">
-             <span className="text-xs font-semibold text-gray-500 dark:text-gray-400 select-none">
-                ⌘K
-             </span>
+             
           </div>
 
           <input

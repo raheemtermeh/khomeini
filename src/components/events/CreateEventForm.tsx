@@ -1,6 +1,8 @@
 // src/components/events/CreateEventForm.tsx
 
 import { useState, useEffect, useRef } from "react";
+// در بالای فایل src/components/events/CreateEventForm.tsx
+import { IoChevronDownOutline } from "react-icons/io5"; // IoChevronDownOutline را اضافه کنید
 import { useNavigate } from "react-router-dom";
 // ✅ import DateObject
 import DatePicker, { DateObject } from "react-multi-date-picker";
@@ -490,7 +492,8 @@ const CreateEventForm = ({ selectedCategory }: Props) => {
             className={getInputClass("category")}
             disabled={loading}
           >
-            <option value="">-- انتخاب کنید --</option>
+            <option value="">-- انتخاب کنید --    </option>
+            
             {categories.map((cat: any) => (
               <option key={cat.pk} value={cat.pk}>
                 {cat.name}
